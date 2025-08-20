@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: FreshCart API
+  version: "1.0"
+servers:
+  - url: https://api.example.com
+paths:
+  /checkout/confirm:
+    post:
+      summary: Confirm order (idempotency required)
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 16, maxLength: 64 }
+        - in: header
+          name: X-Trace-Id
+          required: false
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cartId, deliverySlotId, paymentMethod]
+              properties:
+                cartId: { type: string }
+                deliverySlotId: { type: string }
+                addressId: { type: string, nullable: true }
+                paymentMethod: { type: string, enum: [card, pay_later] }
+      responses:
+        "200":
+          description: confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId: { type: string }
+                  status: { type: string, enum: [confirmed] }
+        "202":
+          description: pending (async payment)
+        "409":
+          description: reservation or inventory conflict
+        "422":
+          description: business rule violation (e.g., coupon not applicable)
