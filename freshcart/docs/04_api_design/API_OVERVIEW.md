@@ -1,16 +1,22 @@
-# API 概要
+# API 概要（詳細）
 
-## 認認/許可
-- ゲスト購入可。履歴参照は会員のみ
-- Token要件は実装外。本仕置では役割(guest/member/admin)のみ規定
+- 認証: Bearer（練習用途のため任意）
+- 役割: guest/member/admin
+- 書込系は `Idempotency-Key` 必須（8+文字）
 
-## エンドポイント一覧
-- POST /checkout/start              : スロット一覧取得ー付け開始
-- POST /checkout/apply-coupon       : カートにクーポン適用
-- POST /checkout/confirm            : 冥羮キー必須。注文確定
-- POST /checkout/cancel             : 注文取消
-- GET  /orders/{id}                 : 注文取得（本人のみ）
-- POST /webhooks/payment            : 決準PSPからの通知（重複あり）
+## 共通
+- リクエストヘッダ: `Idempotency-Key`, `X-Trace-Id`
+- エラーフォーマット: `{ code, message, details? }`
+- エラーコード: `08_standards/ERROR_CODES.md` 参照
 
-## エラーコード
-`docs/08_standards/ERROR_CODES.md`
+## エンドポイント
+|Path|Method|概要|
+|--|--|--|
+|/checkout/confirm|POST|注文確定|
+|/slots/reserve|POST|配送スロット予約|
+|/coupons/validate|POST|クーポン検証|
+
+## 冪等の扱い
+- 同一キーは**同一応答**を返す（正常・保留を含む）。
+- 失敗系の再送は方針で分岐（PAY_FAILは再送不可、PSP_TIMEOUTは再送可）。
+
